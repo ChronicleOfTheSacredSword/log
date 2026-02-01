@@ -14,6 +14,9 @@ export class LogsService implements LogsPort {
 	}
   
 	async createLogs(input: Omit<Logs, 'id'>): Promise<Logs>{
+		if(!input.content || !input.id_hero){
+			throw new Error('ID Hero or message content missing.');
+		}
 		return this.repo.save(input);
 	}
 }
