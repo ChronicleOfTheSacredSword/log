@@ -1,5 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { LogsService } from '../../services/logsService';
+import amqp from 'amqplib';
 
 export class LogsController {
 	private service_logs: LogsService;
@@ -29,5 +30,28 @@ export class LogsController {
 	async createLogs(req: Request, res: Response) {
 		const log = await this.service_logs.createLogs(req.body);
 		res.json(log);
+	}
+
+	async startLogsConsumer() {
+		const connection = await amqp.connect('amqp://microservice:microservice@localhost:5672');
+
+		const channel = await connection.createChannel();
+		const queue = 'logs_queue';
+
+		await channel.assertQueue(queue, { durable: true });
+
+		channel.consume(queue, async (msg: any) => {
+			if (!msg) return;
+
+			try {
+				const payload = JSON.parse(msg.content.toString());
+				await this.service_logs.createLogs(payload);
+				console.log("J'AI RECU LE MSG", payload);
+				channel.ack(msg);
+			} catch (err) {
+				console.error('Failed to process log message', err);
+				channel.nack(msg, false, false);
+			}
+		});
 	}
 }
