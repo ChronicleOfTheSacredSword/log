@@ -46,7 +46,6 @@ export class LogsController {
 			try {
 				const payload = JSON.parse(msg.content.toString());
 				await this.service_logs.createLogs(payload);
-				console.log("J'AI RECU LE MSG", payload);
 				channel.ack(msg);
 			} catch (err) {
 				console.error('Failed to process log message', err);
